@@ -1,74 +1,70 @@
-# Guía de trabajo para asistentes IA
+# AI Assistant Guidelines
 
-Este fichero es leído automáticamente por Claude Code. Si usas otro asistente IA
-(GitHub Copilot, Cursor, Windsurf, GPT, etc.), proporciónselo como contexto antes
-de pedir cambios. Las reglas aquí son de obligado cumplimiento para cualquier IA
-que trabaje en este repositorio.
+This file is loaded automatically by Claude Code. If you are using a different AI
+assistant (GitHub Copilot, Cursor, Windsurf, GPT, etc.), provide this file as
+context before requesting changes. All rules here are mandatory for any AI working
+on this repository.
 
 ---
 
-## 1. Autoría de commits
+## 1. Commit authorship
 
-- **Nunca** añadas trazas de co-autoría de IA en los mensajes de commit.
-  No uses `Co-Authored-By`, ni menciones "Claude", "GPT", "Copilot" ni ningún
-  asistente en el historial de Git.
-- El autor de todos los commits es el desarrollador humano configurado en Git:
+- **Never** add AI co-authorship trailers to commit messages.
+  Do not use `Co-Authored-By` or mention "Claude", "GPT", "Copilot" or any other
+  assistant in the Git history.
+- The author of every commit is the human developer configured in Git:
   `AlbertoPyt <albertopyt1407@gmail.com>`.
-- El mensaje de commit debe redactarse como si lo hubiera escrito el desarrollador,
-  en primera o tercera persona técnica, nunca en nombre de la IA.
+- Commit messages must be written as if authored by the developer,
+  in technical third person, never on behalf of an AI.
 
 ---
 
-## 2. Directivas `using` — siempre en `GlobalUsings.cs`
+## 2. `using` directives — always in `GlobalUsings.cs`
 
-- **Nunca** añadas `using` al inicio de un fichero de clase `.cs` individual.
-- Todos los `using` van en el fichero `GlobalUsings.cs` del proyecto correspondiente.
-  Si no existe, créalo.
-- Cada proyecto tiene su propio `GlobalUsings.cs` en la raíz del proyecto.
-- No dupliques usings que ya añade el SDK implícitamente
-  (`ImplicitUsings=enable` en el `.csproj`).
-- Si al refactorizar un using de una clase resulta que era el único consumidor,
-  añádelo igualmente a `GlobalUsings.cs` (consistencia antes que ahorro).
+- **Never** add `using` statements at the top of individual `.cs` class files.
+- All `using` directives belong in the `GlobalUsings.cs` file of the corresponding
+  project. Create it if it does not exist.
+- Each project has its own `GlobalUsings.cs` at the project root.
+- Do not duplicate usings already added implicitly by the SDK
+  (`ImplicitUsings=enable` in the `.csproj`).
+- If refactoring a using out of a class leaves it as the sole consumer,
+  add it to `GlobalUsings.cs` anyway — consistency over micro-savings.
 
-**Estructura de ejemplo:**
+**Example structure:**
 ```
 src/
   MCP.AzureDevOps.Domain/
-    GlobalUsings.cs          ← usings del proyecto Domain
+    GlobalUsings.cs          ← usings for the Domain project
   MCP.AzureDevOps.Application/
-    GlobalUsings.cs          ← usings del proyecto Application
+    GlobalUsings.cs          ← usings for the Application project
   ...
 ```
 
 ---
 
-## 3. Idioma
+## 3. Language
 
-- **Código** (nombres de clases, métodos, variables, propiedades): inglés.
-- **Comentarios XML/doc** (`///`), mensajes de log, mensajes de error al usuario
-  y mensajes de commit: **español**.
-- **Tests**: nombres de métodos en español descriptivo
-  (`Register_SinPat_Returns400`, `Forward_CuentaInexistente_Returns401`).
+- **Everything** — code, comments, XML doc (`///`), log messages, error messages,
+  test method names, and commit messages — must be written in **English**.
 
 ---
 
-## 4. Estilo general de código
+## 4. General code style
 
-- Usa **primary constructors** de C# cuando el tipo solo tiene inyección de
-  dependencias (sin lógica adicional en el constructor).
-- Usa **`sealed`** en clases que no están pensadas para herencia.
-- Usa **`record`** para value objects y DTOs inmutables.
-- No sobreescribas `ToString()` en value objects que contengan datos sensibles
-  (tokens, contraseñas, claves).
-- Prefiere **`IReadOnlyList<T>`** / **`IReadOnlyDictionary<K,V>`** en firmas
-  públicas; usa `List<T>` / `Dictionary<K,V>` solo en implementaciones privadas.
+- Use **primary constructors** when a type only performs dependency injection
+  (no additional constructor logic).
+- Mark classes as **`sealed`** unless inheritance is explicitly intended.
+- Use **`record`** for value objects and immutable DTOs.
+- Do **not** override `ToString()` on value objects that contain sensitive data
+  (tokens, passwords, keys).
+- Prefer **`IReadOnlyList<T>`** / **`IReadOnlyDictionary<K,V>`** in public
+  signatures; use `List<T>` / `Dictionary<K,V>` only in private implementations.
 
 ---
 
-## 5. Arquitectura
+## 5. Architecture
 
-Este proyecto sigue **Clean Architecture / Hexagonal**. Las reglas de dependencia
-son estrictas:
+This project follows **Clean Architecture / Hexagonal**. Dependency rules are strict:
 
 ```
 Domain  ←  Application  ←  Infrastructure
@@ -77,24 +73,24 @@ Domain  ←  Application  ←  Infrastructure
                         ←  Sdk
 ```
 
-- `Domain` no depende de ningún paquete NuGet externo.
-- `Application` solo depende de `Domain` y de abstracciones (`IOptions<T>` está
-  permitido, `DbContext` no).
-- `Infrastructure` implementa los puertos definidos en `Application`.
-- `Host`, `Cli` y `Sdk` son los puntos de entrada; pueden referenciar todas las
-  capas anteriores pero **nunca al revés**.
+- `Domain` has no external NuGet dependencies.
+- `Application` depends only on `Domain` and abstractions (`IOptions<T>` is
+  allowed; `DbContext` is not).
+- `Infrastructure` implements the ports defined in `Application`.
+- `Host`, `Cli` and `Sdk` are entry points; they may reference all inner layers
+  but **never the other way around**.
 
 ---
 
 ## 6. Tests
 
-- Usa **xUnit** + **FluentAssertions** + **NSubstitute**.
-- Los tests E2E del Host usan `WebApplicationFactory<Program>` con
-  `McpTestFactory` (sin base de datos real, sin llamadas reales al upstream).
-- Cada test usa IDs únicos generados con `Guid.NewGuid()` para evitar colisiones
-  de estado entre tests.
-- Cubre siempre los caminos de error además del camino feliz.
+- Use **xUnit** + **FluentAssertions** + **NSubstitute**.
+- Host E2E tests use `WebApplicationFactory<Program>` with `McpTestFactory`
+  (no real database, no real upstream calls).
+- Each test uses unique IDs generated with `Guid.NewGuid()` to avoid state
+  collisions between tests.
+- Always cover error paths in addition to the happy path.
 
 ---
 
-*Este fichero se irá completando con nuevas reglas según evolucione el proyecto.*
+*This file will be extended with new rules as the project evolves.*
