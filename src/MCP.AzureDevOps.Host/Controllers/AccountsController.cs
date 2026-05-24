@@ -1,8 +1,4 @@
-using MCP.AzureDevOps.Application.Ports.In;
-using MCP.AzureDevOps.Domain.Exceptions;
 using MCP.AzureDevOps.Host.Controllers.Dtos;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 
 namespace MCP.AzureDevOps.Host.Controllers;
 
@@ -34,13 +30,9 @@ public sealed class AccountsController(IManageAccountsUseCase manageAccounts) : 
     {
         try
         {
-            await manageAccounts.RegisterAsync(
+            var created = await manageAccounts.RegisterAsync(
                 new RegisterAccountRequest(dto.AccountId, dto.Pat, dto.DisplayName, dto.TargetUrl),
                 ct);
-
-            // Devolver la cuenta recién creada (sin el PAT)
-            var accounts = await manageAccounts.GetAllAsync(ct);
-            var created  = accounts.FirstOrDefault(a => a.AccountId == dto.AccountId);
 
             return CreatedAtAction(nameof(GetAll), created);
         }

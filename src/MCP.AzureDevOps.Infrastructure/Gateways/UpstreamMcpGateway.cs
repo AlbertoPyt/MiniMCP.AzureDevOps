@@ -1,9 +1,4 @@
-using MCP.AzureDevOps.Application.Ports.In;
-using MCP.AzureDevOps.Application.Ports.Out;
-using MCP.AzureDevOps.Domain.ValueObjects;
-using MCP.AzureDevOps.Infrastructure.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
 using System.Net.Http.Headers;

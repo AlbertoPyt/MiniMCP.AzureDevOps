@@ -1,5 +1,3 @@
-using Microsoft.EntityFrameworkCore;
-
 namespace MCP.AzureDevOps.Infrastructure.Persistence;
 
 public sealed class AccountDbContext(DbContextOptions<AccountDbContext> options) : DbContext(options)

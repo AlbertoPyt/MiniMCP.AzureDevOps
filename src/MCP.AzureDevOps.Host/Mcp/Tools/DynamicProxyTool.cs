@@ -1,8 +1,3 @@
-using MCP.AzureDevOps.Application.Ports.In;
-using MCP.AzureDevOps.Host.Mcp.Context;
-using ModelContextProtocol;
-using ModelContextProtocol.Server;
-using System.ComponentModel;
 using System.Text.Json;
 
 namespace MCP.AzureDevOps.Host.Mcp.Tools;

@@ -1,15 +1,11 @@
 using MCP.AzureDevOps.Application.DependencyInjection;
-using MCP.AzureDevOps.Application.Ports.In;
 using MCP.AzureDevOps.Domain.ValueObjects;
 using MCP.AzureDevOps.Host.Auth;
-using MCP.AzureDevOps.Host.Mcp.Context;
 using MCP.AzureDevOps.Host.Mcp.Tools;
 using MCP.AzureDevOps.Infrastructure.Configuration;
 using MCP.AzureDevOps.Infrastructure.DependencyInjection;
 using MCP.AzureDevOps.Infrastructure.Persistence;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 
 var isStdioMode = args.Contains("--stdio");

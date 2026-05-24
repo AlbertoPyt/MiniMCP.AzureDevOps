@@ -1,8 +1,3 @@
-using MCP.AzureDevOps.Application.Ports.In;
-using MCP.AzureDevOps.Domain.Exceptions;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
 namespace MCP.AzureDevOps.Host.Controllers;
 
 /// <summary>

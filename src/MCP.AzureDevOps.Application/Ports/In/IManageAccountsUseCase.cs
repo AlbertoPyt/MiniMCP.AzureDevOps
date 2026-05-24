@@ -6,8 +6,8 @@ namespace MCP.AzureDevOps.Application.Ports.In;
 /// </summary>
 public interface IManageAccountsUseCase
 {
-    /// <summary>Registra una nueva cuenta con su PAT en texto plano.</summary>
-    Task RegisterAsync(RegisterAccountRequest request, CancellationToken cancellationToken = default);
+    /// <summary>Registra una nueva cuenta con su PAT en texto plano y devuelve su proyección.</summary>
+    Task<AccountInfo> RegisterAsync(RegisterAccountRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>Elimina una cuenta por su identificador.</summary>
     Task RemoveAsync(string accountId, CancellationToken cancellationToken = default);

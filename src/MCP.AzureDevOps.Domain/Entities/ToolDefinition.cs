@@ -1,5 +1,3 @@
-using MCP.AzureDevOps.Domain.ValueObjects;
-
 namespace MCP.AzureDevOps.Domain.Entities;
 
 /// <summary>

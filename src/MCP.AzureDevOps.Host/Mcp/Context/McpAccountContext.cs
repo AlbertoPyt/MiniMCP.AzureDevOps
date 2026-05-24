@@ -1,5 +1,4 @@
 using MCP.AzureDevOps.Infrastructure.Configuration;
-using Microsoft.Extensions.Options;
 
 namespace MCP.AzureDevOps.Host.Mcp.Context;
 

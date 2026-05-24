@@ -1,10 +1,5 @@
-using MCP.AzureDevOps.Application.Ports.Out;
-using MCP.AzureDevOps.Domain.Entities;
-using MCP.AzureDevOps.Domain.Exceptions;
-using MCP.AzureDevOps.Domain.ValueObjects;
 using MCP.AzureDevOps.Infrastructure.Persistence;
 using MCP.AzureDevOps.Infrastructure.Security;
-using Microsoft.EntityFrameworkCore;
 
 namespace MCP.AzureDevOps.Infrastructure.Repositories;
 
@@ -31,6 +26,15 @@ internal sealed class DbAccountRepository(
 
         return entities.Select(ToDomain).ToList();
     }
+
+    /// <summary>
+    /// Proyección sin descifrado: la consulta se resuelve en SQL sin traer PATs a memoria.
+    /// </summary>
+    public async Task<IReadOnlyList<AccountInfo>> GetAllInfoAsync(CancellationToken cancellationToken = default)
+        => await db.Accounts
+            .OrderBy(a => a.DisplayName)
+            .Select(e => new AccountInfo(e.Id, e.DisplayName, e.TargetUrl, e.CreatedAt))
+            .ToListAsync(cancellationToken);
 
     public async Task AddAsync(Account account, CancellationToken cancellationToken = default)
     {

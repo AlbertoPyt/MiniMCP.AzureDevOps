@@ -1,28 +1,25 @@
-using MCP.AzureDevOps.Application.Ports.Out;
-using MCP.AzureDevOps.Domain.Entities;
-using MCP.AzureDevOps.Domain.Exceptions;
-using MCP.AzureDevOps.Domain.ValueObjects;
-using MCP.AzureDevOps.Infrastructure.Configuration;
-using Microsoft.Extensions.Options;
+using System.Collections.Concurrent;
 
 namespace MCP.AzureDevOps.Infrastructure.Repositories;
 
 /// <summary>
 /// Repositorio de cuentas respaldado por la configuración (appsettings / env vars).
-/// Solo lectura: los métodos de escritura son no-op o lanzan si se usa sin BBDD.
 /// Se mantiene por compatibilidad con instalaciones sin base de datos configurada.
+/// Usa <see cref="ConcurrentDictionary{TKey,TValue}"/> para ser thread-safe como Singleton.
 /// </summary>
 public sealed class ConfigurationAccountRepository : IAccountRepository
 {
-    private readonly Dictionary<string, Account> _accounts;
+    private readonly ConcurrentDictionary<string, Account> _accounts;
 
     public ConfigurationAccountRepository(IOptions<McpOptions> options)
     {
-        _accounts = options.Value.AccountTokens.ToDictionary(
-            kvp => kvp.Key,
-            kvp => new Account(
-                new AccountId(kvp.Key),
-                new PersonalAccessToken(kvp.Value)),
+        var pairs = options.Value.AccountTokens.Select(kvp =>
+            KeyValuePair.Create(
+                kvp.Key,
+                new Account(new AccountId(kvp.Key), new PersonalAccessToken(kvp.Value))));
+
+        _accounts = new ConcurrentDictionary<string, Account>(
+            pairs,
             StringComparer.OrdinalIgnoreCase);
     }
 
@@ -32,9 +29,18 @@ public sealed class ConfigurationAccountRepository : IAccountRepository
     public Task<IReadOnlyList<Account>> GetAllAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult<IReadOnlyList<Account>>(_accounts.Values.ToList());
 
+    public Task<IReadOnlyList<AccountInfo>> GetAllInfoAsync(CancellationToken cancellationToken = default)
+    {
+        var result = _accounts.Values
+            .Select(a => new AccountInfo(a.Id.Value, a.DisplayName, a.TargetUrl, a.CreatedAt))
+            .OrderBy(a => a.DisplayName)
+            .ToList();
+        return Task.FromResult<IReadOnlyList<AccountInfo>>(result);
+    }
+
     public Task AddAsync(Account account, CancellationToken cancellationToken = default)
     {
-        _accounts[account.Id.Value] = account;
+        _accounts.TryAdd(account.Id.Value, account);
         return Task.CompletedTask;
     }
 
@@ -48,7 +54,8 @@ public sealed class ConfigurationAccountRepository : IAccountRepository
 
     public Task DeleteAsync(AccountId id, CancellationToken cancellationToken = default)
     {
-        _accounts.Remove(id.Value);
+        if (!_accounts.TryRemove(id.Value, out _))
+            throw new AccountNotFoundException(id.Value);
         return Task.CompletedTask;
     }
 }

@@ -1,6 +1,3 @@
-using MCP.AzureDevOps.Application.Ports.In;
-using MCP.AzureDevOps.Domain.ValueObjects;
-
 namespace MCP.AzureDevOps.Application.Ports.Out;
 
 public interface IUpstreamMcpGateway

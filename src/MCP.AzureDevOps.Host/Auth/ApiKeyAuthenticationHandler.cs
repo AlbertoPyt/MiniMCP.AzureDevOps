@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.Extensions.Options;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -10,31 +9,36 @@ namespace MCP.AzureDevOps.Host.Auth;
 /// <summary>
 /// Handler de autenticación por API key.
 /// Lee el header <c>X-Api-Key</c> y lo compara con <see cref="AuthOptions.AdminApiKey"/>
-/// usando comparación en tiempo constante (previene timing attacks).
+/// usando <see cref="CryptographicOperations.FixedTimeEquals"/> (sin comparación de longitud
+/// previa que filtraría información sobre la clave configurada).
 ///
-/// Comportamiento:
-/// - Clave no configurada → NoResult (auth deshabilitada, solo aceptable en desarrollo).
-/// - Header ausente       → Fail (401).
-/// - Clave incorrecta     → Fail (401).
-/// - Clave correcta       → Success (identidad "api-client").
+/// Los bytes de la clave se precalculan en el constructor para no asignar memoria en cada petición.
 /// </summary>
-public sealed class ApiKeyAuthenticationHandler(
-    IOptionsMonitor<ApiKeyAuthenticationOptions> options,
-    ILoggerFactory logger,
-    UrlEncoder encoder,
-    IOptions<AuthOptions> authOptions)
-    : AuthenticationHandler<ApiKeyAuthenticationOptions>(options, logger, encoder)
+public sealed class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthenticationOptions>
 {
-    private readonly ILogger<ApiKeyAuthenticationHandler> _log =
-        logger.CreateLogger<ApiKeyAuthenticationHandler>();
+    private readonly ILogger<ApiKeyAuthenticationHandler> _log;
+
+    // Precalculado en el constructor: null si la clave no está configurada
+    private readonly byte[]? _configuredKeyBytes;
+
+    public ApiKeyAuthenticationHandler(
+        IOptionsMonitor<ApiKeyAuthenticationOptions> options,
+        ILoggerFactory logger,
+        UrlEncoder encoder,
+        IOptions<AuthOptions> authOptions)
+        : base(options, logger, encoder)
+    {
+        _log = logger.CreateLogger<ApiKeyAuthenticationHandler>();
+
+        var key = authOptions.Value.AdminApiKey;
+        _configuredKeyBytes = string.IsNullOrWhiteSpace(key)
+            ? null
+            : Encoding.UTF8.GetBytes(key);
+    }
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        var configuredKey = authOptions.Value.AdminApiKey;
-
-        // Si no hay clave configurada, la autenticación queda deshabilitada.
-        // Se emite una advertencia para que no pase desapercibido en producción.
-        if (string.IsNullOrWhiteSpace(configuredKey))
+        if (_configuredKeyBytes is null)
         {
             _log.LogWarning(
                 "Auth:AdminApiKey no está configurado. Los endpoints críticos están ABIERTOS. " +
@@ -49,13 +53,11 @@ public sealed class ApiKeyAuthenticationHandler(
                 AuthenticateResult.Fail($"Header '{ApiKeyAuthenticationOptions.HeaderName}' ausente o vacío."));
         }
 
-        var providedKey  = headerValues.ToString();
-        var configBytes  = Encoding.UTF8.GetBytes(configuredKey);
-        var providedBytes = Encoding.UTF8.GetBytes(providedKey);
+        var providedBytes = Encoding.UTF8.GetBytes(headerValues.ToString());
 
-        // Comparación en tiempo constante: evita inferir la clave por timing
-        if (configBytes.Length != providedBytes.Length ||
-            !CryptographicOperations.FixedTimeEquals(configBytes, providedBytes))
+        // FixedTimeEquals ya maneja longitudes distintas correctamente sin revelar la longitud
+        // de la clave configurada mediante un código más rápido
+        if (!CryptographicOperations.FixedTimeEquals(_configuredKeyBytes, providedBytes))
         {
             _log.LogWarning(
                 "Intento de acceso con API key inválida desde {RemoteIp}",
@@ -71,7 +73,6 @@ public sealed class ApiKeyAuthenticationHandler(
         return Task.FromResult(AuthenticateResult.Success(ticket));
     }
 
-    /// <summary>Devuelve 401 con un mensaje claro indicando el header requerido.</summary>
     protected override Task HandleChallengeAsync(AuthenticationProperties properties)
     {
         Response.StatusCode  = StatusCodes.Status401Unauthorized;
@@ -80,7 +81,6 @@ public sealed class ApiKeyAuthenticationHandler(
         return Response.WriteAsync(body);
     }
 
-    /// <summary>Devuelve 403 si el usuario está autenticado pero no autorizado.</summary>
     protected override Task HandleForbiddenAsync(AuthenticationProperties properties)
     {
         Response.StatusCode  = StatusCodes.Status403Forbidden;

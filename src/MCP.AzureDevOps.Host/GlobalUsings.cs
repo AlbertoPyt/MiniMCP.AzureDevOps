@@ -1,0 +1,9 @@
+global using MCP.AzureDevOps.Application.Ports.In;
+global using MCP.AzureDevOps.Domain.Exceptions;
+global using MCP.AzureDevOps.Host.Mcp.Context;
+global using Microsoft.AspNetCore.Authorization;
+global using Microsoft.AspNetCore.Mvc;
+global using Microsoft.Extensions.Options;
+global using ModelContextProtocol;
+global using ModelContextProtocol.Server;
+global using System.ComponentModel;

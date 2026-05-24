@@ -1,8 +1,3 @@
-using MCP.AzureDevOps.Application.Ports.In;
-using MCP.AzureDevOps.Application.Ports.Out;
-using MCP.AzureDevOps.Domain.Exceptions;
-using MCP.AzureDevOps.Domain.ValueObjects;
-
 namespace MCP.AzureDevOps.Application.UseCases;
 
 public sealed class ListToolsUseCase(
