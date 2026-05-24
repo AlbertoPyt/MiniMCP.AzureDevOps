@@ -1,0 +1,7 @@
+# Normalizar line endings a LF en el repositorio, CRLF en Windows al hacer checkout
+* text=auto eol=crlf
+
+# Forzar LF para scripts y archivos que lo requieren
+*.sh text eol=lf
+*.bash text eol=lf
+Makefile text eol=lf
