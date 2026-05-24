@@ -5,5 +5,5 @@ namespace MCP.AzureDevOps.Application.Ports.In;
 /// </summary>
 public interface IGetTokenUseCase
 {
-    string GetToken(string accountId);
+    Task<string> GetTokenAsync(string accountId, CancellationToken cancellationToken = default);
 }

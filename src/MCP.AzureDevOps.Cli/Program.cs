@@ -17,7 +17,7 @@ var accountOption = new Option<string>("--account", "Account ID configured in ap
 // comando: forward <tool-name> --account --args
 // ══════════════════════════════════════════════
 var toolNameArg = new Argument<string>("tool-name", "MCP tool name to invoke");
-var argsOption = new Option<string>("--args", () => "{}", "Tool arguments as a JSON object");
+var argsOption  = new Option<string>("--args", () => "{}", "Tool arguments as a JSON object");
 
 var forwardCommand = new Command("forward", "Forward a tool call directly to the upstream MCP");
 forwardCommand.AddArgument(toolNameArg);
@@ -26,11 +26,9 @@ forwardCommand.AddOption(argsOption);
 forwardCommand.SetHandler(async (account, toolName, argsJson) =>
 {
     using var host = BuildHost();
-    var useCase = host.Services.GetRequiredService<IForwardToolUseCase>();
-
+    var useCase   = host.Services.GetRequiredService<IForwardToolUseCase>();
     var arguments = ParseArgs(argsJson);
-    var result = await useCase.ExecuteAsync(new ForwardToolRequest(account, toolName, arguments));
-
+    var result    = await useCase.ExecuteAsync(new ForwardToolRequest(account, toolName, arguments));
     Console.WriteLine(result.Content);
     Environment.Exit(result.IsError ? 1 : 0);
 }, accountOption, toolNameArg, argsOption);
@@ -42,10 +40,9 @@ var toolsListCommand = new Command("list", "List all available tools (static + d
 toolsListCommand.AddOption(accountOption);
 toolsListCommand.SetHandler(async (account) =>
 {
-    using var host = BuildHost();
-    var useCase = host.Services.GetRequiredService<IListToolsUseCase>();
-    var tools = await useCase.GetToolsAsync(account);
-
+    using var host  = BuildHost();
+    var useCase     = host.Services.GetRequiredService<IListToolsUseCase>();
+    var tools       = await useCase.GetToolsAsync(account);
     foreach (var tool in tools)
     {
         var badge = tool.IsStatic ? "[static]" : "[dynamic]";
@@ -65,10 +62,10 @@ toolsCallCommand.AddOption(accountOption);
 toolsCallCommand.AddOption(callArgsOpt);
 toolsCallCommand.SetHandler(async (account, name, argsJson) =>
 {
-    using var host = BuildHost();
-    var useCase = host.Services.GetRequiredService<IForwardToolUseCase>();
-    var arguments = ParseArgs(argsJson);
-    var result = await useCase.ExecuteAsync(new ForwardToolRequest(account, name, arguments));
+    using var host  = BuildHost();
+    var useCase     = host.Services.GetRequiredService<IForwardToolUseCase>();
+    var arguments   = ParseArgs(argsJson);
+    var result      = await useCase.ExecuteAsync(new ForwardToolRequest(account, name, arguments));
     Console.WriteLine(result.Content);
     Environment.Exit(result.IsError ? 1 : 0);
 }, accountOption, callNameArg, callArgsOpt);
@@ -81,18 +78,18 @@ toolsCommand.AddCommand(toolsCallCommand);
 // comando: accounts list
 // ══════════════════════════════════════════════
 var accountsListCommand = new Command("list", "List all configured accounts");
-accountsListCommand.SetHandler(() =>
+accountsListCommand.SetHandler(async () =>
 {
-    using var host = BuildHost();
-    var repo = host.Services.GetRequiredService<IAccountRepository>();
-    var accounts = repo.GetAll();
+    using var host  = BuildHost();
+    var useCase     = host.Services.GetRequiredService<IManageAccountsUseCase>();
+    var accounts    = await useCase.GetAllAsync();
     if (!accounts.Any())
     {
         Console.WriteLine("No accounts configured. Add entries to appsettings.json under Mcp.AccountTokens.");
         return;
     }
     foreach (var acc in accounts)
-        Console.WriteLine(acc.Id.Value);
+        Console.WriteLine($"{acc.AccountId,-30} {acc.DisplayName}");
 });
 
 var accountsCommand = new Command("accounts", "Manage configured accounts");
@@ -109,7 +106,6 @@ rootCommand.AddCommand(accountsCommand);
 return await rootCommand.InvokeAsync(args);
 
 // ── Helpers ──
-// Host.CreateDefaultBuilder ya carga appsettings.json + env vars automáticamente
 static IHost BuildHost() =>
     Host.CreateDefaultBuilder()
         .ConfigureServices((ctx, services) =>
@@ -117,8 +113,7 @@ static IHost BuildHost() =>
             services.AddInfrastructureServices(ctx.Configuration);
             services.AddApplicationServices();
             // Tools estáticas vacías para el CLI (no necesita el listado completo)
-            services.AddSingleton<IEnumerable<ToolDescriptor>>(
-                Array.Empty<ToolDescriptor>());
+            services.AddSingleton<IEnumerable<ToolDescriptor>>(Array.Empty<ToolDescriptor>());
         })
         .Build();
 

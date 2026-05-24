@@ -15,4 +15,11 @@ public sealed class McpOptions
 
     /// <summary>Mapa de accountId → Personal Access Token.</summary>
     public Dictionary<string, string> AccountTokens { get; init; } = [];
+
+    /// <summary>
+    /// Clave AES-256 codificada en base64 (32 bytes) para cifrar los PATs en base de datos.
+    /// Obligatoria cuando se usa almacenamiento en BBDD.
+    /// Generar con: openssl rand -base64 32
+    /// </summary>
+    public string DbEncryptionKey { get; init; } = string.Empty;
 }

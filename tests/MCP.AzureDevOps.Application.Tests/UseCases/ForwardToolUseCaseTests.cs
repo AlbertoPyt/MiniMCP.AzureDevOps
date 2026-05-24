@@ -12,7 +12,7 @@ namespace MCP.AzureDevOps.Application.Tests.UseCases;
 public class ForwardToolUseCaseTests
 {
     private readonly IAccountRepository _accounts = Substitute.For<IAccountRepository>();
-    private readonly IUpstreamMcpGateway _gateway = Substitute.For<IUpstreamMcpGateway>();
+    private readonly IUpstreamMcpGateway _gateway  = Substitute.For<IUpstreamMcpGateway>();
     private readonly ForwardToolUseCase _sut;
 
     public ForwardToolUseCaseTests()
@@ -25,7 +25,8 @@ public class ForwardToolUseCaseTests
     {
         // Arrange
         var account = new Account(new AccountId("acc1"), new PersonalAccessToken("tok123"));
-        _accounts.FindById(Arg.Any<AccountId>()).Returns(account);
+        _accounts.FindByIdAsync(Arg.Any<AccountId>(), Arg.Any<CancellationToken>())
+                 .Returns(account);
         _gateway.CallToolAsync(
             Arg.Any<PersonalAccessToken>(),
             "workitems_get",
@@ -47,7 +48,8 @@ public class ForwardToolUseCaseTests
     public async Task ExecuteAsync_WhenAccountNotFound_ThrowsAccountNotFoundException()
     {
         // Arrange
-        _accounts.FindById(Arg.Any<AccountId>()).Returns((Account?)null);
+        _accounts.FindByIdAsync(Arg.Any<AccountId>(), Arg.Any<CancellationToken>())
+                 .Returns((Account?)null);
 
         // Act & Assert
         var act = async () => await _sut.ExecuteAsync(
@@ -63,7 +65,8 @@ public class ForwardToolUseCaseTests
     {
         // Arrange
         var account = new Account(new AccountId("acc1"), new PersonalAccessToken("tok123"));
-        _accounts.FindById(Arg.Any<AccountId>()).Returns(account);
+        _accounts.FindByIdAsync(Arg.Any<AccountId>(), Arg.Any<CancellationToken>())
+                 .Returns(account);
         _gateway.CallToolAsync(
             Arg.Any<PersonalAccessToken>(),
             Arg.Any<string>(),

@@ -17,7 +17,7 @@ public sealed class ListToolsUseCase(
         CancellationToken cancellationToken = default)
     {
         var id = new AccountId(accountId);
-        var account = accounts.FindById(id)
+        var account = await accounts.FindByIdAsync(id, cancellationToken)
             ?? throw new AccountNotFoundException(accountId);
 
         // Consultar upstream (puede fallar si no está disponible; lo gestionamos graciosamente)

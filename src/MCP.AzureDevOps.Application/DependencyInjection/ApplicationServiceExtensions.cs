@@ -11,6 +11,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IForwardToolUseCase, ForwardToolUseCase>();
         services.AddScoped<IListToolsUseCase, ListToolsUseCase>();
         services.AddScoped<IGetTokenUseCase, GetTokenUseCase>();
+        services.AddScoped<IManageAccountsUseCase, ManageAccountsUseCase>();
         return services;
     }
 }

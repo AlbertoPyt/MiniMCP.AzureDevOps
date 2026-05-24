@@ -5,6 +5,10 @@ namespace MCP.AzureDevOps.Application.Ports.Out;
 
 public interface IAccountRepository
 {
-    Account? FindById(AccountId id);
-    IReadOnlyList<Account> GetAll();
+    Task<Account?> FindByIdAsync(AccountId id, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Account>> GetAllAsync(CancellationToken cancellationToken = default);
+
+    Task AddAsync(Account account, CancellationToken cancellationToken = default);
+    Task UpdateAsync(Account account, CancellationToken cancellationToken = default);
+    Task DeleteAsync(AccountId id, CancellationToken cancellationToken = default);
 }

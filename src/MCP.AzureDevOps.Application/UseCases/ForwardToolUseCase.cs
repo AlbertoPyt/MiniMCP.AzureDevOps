@@ -14,7 +14,7 @@ public sealed class ForwardToolUseCase(
         CancellationToken cancellationToken = default)
     {
         var accountId = new AccountId(request.AccountId);
-        var account = accounts.FindById(accountId)
+        var account = await accounts.FindByIdAsync(accountId, cancellationToken)
             ?? throw new AccountNotFoundException(request.AccountId);
 
         return await gateway.CallToolAsync(
