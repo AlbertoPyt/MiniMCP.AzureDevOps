@@ -92,4 +92,14 @@ Domain  ←  Application  ←  Infrastructure
 
 ---
 
+## 7. README
+
+- Keep `README.md` up to date with every change that affects public behaviour:
+  new commands, new endpoints, changed configuration keys, new environment
+  variables, updated compatibility table.
+- If a PR or commit adds a feature, removes one, or changes how the project is
+  configured or run, update `README.md` in the same commit.
+
+---
+
 *This file will be extended with new rules as the project evolves.*
