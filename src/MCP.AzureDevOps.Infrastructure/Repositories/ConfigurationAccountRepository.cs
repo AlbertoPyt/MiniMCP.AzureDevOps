@@ -1,11 +1,9 @@
-using System.Collections.Concurrent;
-
 namespace MCP.AzureDevOps.Infrastructure.Repositories;
 
 /// <summary>
-/// Repositorio de cuentas respaldado por la configuración (appsettings / env vars).
-/// Se mantiene por compatibilidad con instalaciones sin base de datos configurada.
-/// Usa <see cref="ConcurrentDictionary{TKey,TValue}"/> para ser thread-safe como Singleton.
+/// Account repository backed by configuration (appsettings / env vars).
+/// Used when no database connection string is configured.
+/// Uses <see cref="ConcurrentDictionary{TKey,TValue}"/> to be thread-safe as a Singleton.
 /// </summary>
 public sealed class ConfigurationAccountRepository : IAccountRepository
 {

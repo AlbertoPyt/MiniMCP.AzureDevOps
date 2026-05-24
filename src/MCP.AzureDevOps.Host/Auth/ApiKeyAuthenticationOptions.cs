@@ -1,12 +1,10 @@
-using Microsoft.AspNetCore.Authentication;
-
 namespace MCP.AzureDevOps.Host.Auth;
 
 public sealed class ApiKeyAuthenticationOptions : AuthenticationSchemeOptions
 {
-    /// <summary>Nombre del esquema de autenticación.</summary>
+    /// <summary>Authentication scheme name.</summary>
     public const string Scheme = "ApiKey";
 
-    /// <summary>Nombre del header HTTP donde se espera la clave.</summary>
+    /// <summary>HTTP header name where the key is expected.</summary>
     public const string HeaderName = "X-Api-Key";
 }

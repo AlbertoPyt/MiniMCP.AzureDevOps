@@ -1,18 +1,15 @@
-using System.Security.Cryptography;
-using System.Text;
-
 namespace MCP.AzureDevOps.Infrastructure.Security;
 
 /// <summary>
-/// Cifrado AES-256-GCM autenticado.
-/// Formato almacenado: base64( nonce[12] + ciphertext + tag[16] )
-/// Cada cifrado genera un nonce aleatorio, garantizando que el mismo PAT
-/// produzca siempre un valor diferente en base de datos.
+/// Authenticated AES-256-GCM encryption.
+/// Storage format: base64( nonce[12] + ciphertext + tag[16] ).
+/// Each encryption generates a random nonce, ensuring the same PAT always
+/// produces a different value in the database.
 /// </summary>
 internal sealed class AesPatEncryptionService : IPatEncryptionService
 {
-    private const int NonceSizeBytes = 12;   // 96 bits — recomendado para GCM
-    private const int TagSizeBytes   = 16;   // 128 bits — máxima seguridad
+    private const int NonceSizeBytes = 12;   // 96 bits — recommended for GCM
+    private const int TagSizeBytes   = 16;   // 128 bits — maximum security
 
     private readonly byte[] _key;
 
@@ -22,14 +19,14 @@ internal sealed class AesPatEncryptionService : IPatEncryptionService
 
         if (string.IsNullOrWhiteSpace(keyBase64))
             throw new InvalidOperationException(
-                "La clave de cifrado 'Mcp:DbEncryptionKey' no está configurada. " +
-                "Genera una con: openssl rand -base64 32");
+                "Encryption key 'Mcp:DbEncryptionKey' is not configured. " +
+                "Generate one with: openssl rand -base64 32");
 
         _key = Convert.FromBase64String(keyBase64);
 
         if (_key.Length != 32)
             throw new InvalidOperationException(
-                "'Mcp:DbEncryptionKey' debe ser una clave de 32 bytes codificada en base64.");
+                "'Mcp:DbEncryptionKey' must be a 32-byte base64-encoded key.");
     }
 
     public string Encrypt(string plainText)
@@ -44,7 +41,7 @@ internal sealed class AesPatEncryptionService : IPatEncryptionService
         using var aes = new AesGcm(_key, TagSizeBytes);
         aes.Encrypt(nonce, plainBytes, cipher, tag);
 
-        // Concatenar: nonce || ciphertext || tag
+        // Concatenate: nonce || ciphertext || tag
         var result = new byte[NonceSizeBytes + cipher.Length + TagSizeBytes];
         nonce.CopyTo(result, 0);
         cipher.CopyTo(result, NonceSizeBytes);

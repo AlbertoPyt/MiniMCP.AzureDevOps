@@ -1,11 +1,9 @@
-using MCP.AzureDevOps.Infrastructure.Configuration;
-
 namespace MCP.AzureDevOps.Host.Mcp.Context;
 
 /// <summary>
-/// Scoped: mantiene el accountId activo para una sesión MCP o request REST.
-/// Se inicializa desde McpOptions.ActiveAccountId (modo stdio/MCP HTTP)
-/// o desde el header X-Account-Id (modo REST API).
+/// Scoped: holds the active accountId for an MCP session or REST request.
+/// Initialised from <see cref="McpOptions.ActiveAccountId"/> (stdio / MCP HTTP mode)
+/// or from the <c>X-Account-Id</c> header (REST API mode).
 /// </summary>
 public sealed class McpAccountContext : IMcpAccountContext
 {

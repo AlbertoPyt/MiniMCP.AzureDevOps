@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Options;
-
 namespace MCP.AzureDevOps.Infrastructure.Configuration;
 
 /// <summary>

@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace MCP.AzureDevOps.Host.Controllers.Dtos;
 
 public sealed record RegisterAccountDto(

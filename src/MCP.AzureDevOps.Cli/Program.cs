@@ -1,13 +1,4 @@
-using MCP.AzureDevOps.Application.DependencyInjection;
-using MCP.AzureDevOps.Application.Ports.In;
-using MCP.AzureDevOps.Application.Ports.Out;
-using MCP.AzureDevOps.Infrastructure.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using System.CommandLine;
-using System.Text.Json;
-
-// ── Opciones comunes ──
+// ── Common options ──
 var accountOption = new Option<string>("--account", "Account ID configured in appsettings.json")
 {
     IsRequired = true

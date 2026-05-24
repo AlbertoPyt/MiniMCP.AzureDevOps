@@ -1,9 +1,3 @@
-using Microsoft.AspNetCore.Authentication;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Encodings.Web;
-
 namespace MCP.AzureDevOps.Host.Auth;
 
 /// <summary>

@@ -1,6 +1,3 @@
-using MCP.AzureDevOps.Infrastructure.Persistence;
-using MCP.AzureDevOps.Infrastructure.Security;
-
 namespace MCP.AzureDevOps.Infrastructure.Repositories;
 
 /// <summary>

@@ -1,18 +1,16 @@
-using MCP.AzureDevOps.Host.Controllers.Dtos;
-
 namespace MCP.AzureDevOps.Host.Controllers;
 
 /// <summary>
-/// CRUD de cuentas con PAT cifrado.
-/// Los PATs nunca se devuelven en las respuestas.
-/// Requiere autenticación mediante API key (header X-Api-Key).
+/// Account CRUD with encrypted PAT storage.
+/// PATs are never returned in responses.
+/// Requires API key authentication (X-Api-Key header).
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
 public sealed class AccountsController(IManageAccountsUseCase manageAccounts) : ControllerBase
 {
-    /// <summary>Devuelve todas las cuentas registradas (sin exponer el PAT).</summary>
+    /// <summary>Returns all registered accounts without exposing the PAT.</summary>
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<AccountInfo>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(CancellationToken ct)
@@ -21,7 +19,7 @@ public sealed class AccountsController(IManageAccountsUseCase manageAccounts) : 
         return Ok(accounts);
     }
 
-    /// <summary>Registra una nueva cuenta con su PAT. El PAT se cifra antes de persistir.</summary>
+    /// <summary>Registers a new account with its PAT. The PAT is encrypted before persisting.</summary>
     [HttpPost]
     [ProducesResponseType<AccountInfo>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -42,7 +40,7 @@ public sealed class AccountsController(IManageAccountsUseCase manageAccounts) : 
         }
     }
 
-    /// <summary>Rota el PAT de una cuenta existente.</summary>
+    /// <summary>Rotates the PAT for an existing account.</summary>
     [HttpPut("{accountId}/pat")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -59,11 +57,11 @@ public sealed class AccountsController(IManageAccountsUseCase manageAccounts) : 
         }
         catch (AccountNotFoundException)
         {
-            return NotFound(new { error = $"Cuenta '{accountId}' no encontrada." });
+            return NotFound(new { error = $"Account '{accountId}' not found." });
         }
     }
 
-    /// <summary>Elimina una cuenta y su PAT.</summary>
+    /// <summary>Deletes an account and its PAT.</summary>
     [HttpDelete("{accountId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -76,7 +74,7 @@ public sealed class AccountsController(IManageAccountsUseCase manageAccounts) : 
         }
         catch (AccountNotFoundException)
         {
-            return NotFound(new { error = $"Cuenta '{accountId}' no encontrada." });
+            return NotFound(new { error = $"Account '{accountId}' not found." });
         }
     }
 }

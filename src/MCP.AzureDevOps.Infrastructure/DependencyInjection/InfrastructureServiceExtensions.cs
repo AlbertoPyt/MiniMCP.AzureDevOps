@@ -1,12 +1,3 @@
-using MCP.AzureDevOps.Infrastructure.Configuration;
-using MCP.AzureDevOps.Infrastructure.Gateways;
-using MCP.AzureDevOps.Infrastructure.Persistence;
-using MCP.AzureDevOps.Infrastructure.Repositories;
-using MCP.AzureDevOps.Infrastructure.Security;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
-
 namespace MCP.AzureDevOps.Infrastructure.DependencyInjection;
 
 public static class InfrastructureServiceExtensions

@@ -1,16 +1,3 @@
-using MCP.AzureDevOps.Application.DependencyInjection;
-using MCP.AzureDevOps.Domain.ValueObjects;
-using MCP.AzureDevOps.Host.Auth;
-using MCP.AzureDevOps.Host.Middleware;
-using MCP.AzureDevOps.Host.Mcp.Tools;
-using MCP.AzureDevOps.Infrastructure.Configuration;
-using MCP.AzureDevOps.Infrastructure.DependencyInjection;
-using MCP.AzureDevOps.Infrastructure.Persistence;
-using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
-using Microsoft.OpenApi.Models;
-using System.Threading.RateLimiting;
 
 var isStdioMode = args.Contains("--stdio");
 

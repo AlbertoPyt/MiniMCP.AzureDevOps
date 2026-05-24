@@ -1,10 +1,7 @@
-using System.Text.Json;
-
 namespace MCP.AzureDevOps.Host.Mcp.Tools;
 
 /// <summary>
-/// Proxy dinámico: si el tool solicitado no está registrado estáticamente,
-/// lo reenvía al upstream transparentemente.
+/// Dynamic proxy: forwards any tool not registered statically to the upstream MCP transparently.
 /// </summary>
 [McpServerToolType]
 public sealed class DynamicProxyTool(

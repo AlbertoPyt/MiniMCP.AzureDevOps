@@ -1,5 +1,3 @@
-using Microsoft.EntityFrameworkCore.Design;
-
 namespace MCP.AzureDevOps.Infrastructure.Persistence;
 
 /// <summary>

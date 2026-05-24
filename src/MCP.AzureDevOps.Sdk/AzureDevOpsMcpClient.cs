@@ -1,11 +1,7 @@
-using ModelContextProtocol.Client;
-using ModelContextProtocol.Protocol;
-using System.Net.Http.Headers;
-
 namespace MCP.AzureDevOps.Sdk;
 
 /// <summary>
-/// Cliente de alto nivel para conectarse al servidor MCP de Azure DevOps.
+/// High-level client for connecting to the Azure DevOps MCP server.
 /// </summary>
 public sealed class AzureDevOpsMcpClient : IAsyncDisposable
 {
@@ -14,11 +10,11 @@ public sealed class AzureDevOpsMcpClient : IAsyncDisposable
     private AzureDevOpsMcpClient(McpClient client) => _client = client;
 
     /// <summary>
-    /// Crea un cliente conectado al servidor MCP vía HTTP (Streamable HTTP transport).
+    /// Creates a client connected to the MCP server via HTTP (Streamable HTTP transport).
     /// </summary>
-    /// <param name="serverUrl">URL del servidor MCP, p.ej. http://localhost:5263/mcp</param>
-    /// <param name="personalAccessToken">PAT de Azure DevOps</param>
-    /// <param name="cancellationToken">Token de cancelación</param>
+    /// <param name="serverUrl">MCP server URL, e.g. http://localhost:5263/mcp</param>
+    /// <param name="personalAccessToken">Azure DevOps Personal Access Token</param>
+    /// <param name="cancellationToken">Cancellation token</param>
     public static async Task<AzureDevOpsMcpClient> CreateAsync(
         Uri serverUrl,
         string personalAccessToken,
@@ -36,7 +32,7 @@ public sealed class AzureDevOpsMcpClient : IAsyncDisposable
         return new AzureDevOpsMcpClient(mcpClient);
     }
 
-    /// <summary>Lista todos los tools disponibles en el servidor.</summary>
+    /// <summary>Lists all tools available on the server.</summary>
     public async Task<IReadOnlyList<ToolInfo>> ListToolsAsync(
         CancellationToken cancellationToken = default)
     {
@@ -44,7 +40,7 @@ public sealed class AzureDevOpsMcpClient : IAsyncDisposable
         return tools.Select(t => new ToolInfo(t.Name, t.Description ?? string.Empty)).ToList();
     }
 
-    /// <summary>Llama a un tool con los argumentos indicados y devuelve el contenido como string.</summary>
+    /// <summary>Calls a tool with the given arguments and returns the content as a string.</summary>
     public async Task<string> CallToolAsync(
         string toolName,
         IReadOnlyDictionary<string, object?> arguments,
@@ -60,5 +56,5 @@ public sealed class AzureDevOpsMcpClient : IAsyncDisposable
     public async ValueTask DisposeAsync() => await _client.DisposeAsync();
 }
 
-/// <summary>Información básica de un tool MCP.</summary>
+/// <summary>Basic information about an MCP tool.</summary>
 public sealed record ToolInfo(string Name, string Description);

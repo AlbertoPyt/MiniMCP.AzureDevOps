@@ -1,8 +1,3 @@
-using Microsoft.Extensions.Logging;
-using ModelContextProtocol.Client;
-using ModelContextProtocol.Protocol;
-using System.Net.Http.Headers;
-
 namespace MCP.AzureDevOps.Infrastructure.Gateways;
 
 public sealed class UpstreamMcpGateway(
