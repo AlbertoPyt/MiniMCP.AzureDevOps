@@ -1,15 +1,8 @@
 # AI Assistant Guidelines
 
-This file is loaded automatically by Claude Code.
-
-| AI tool | Instructions file |
-|---|---|
-| Claude Code | `CLAUDE.md` ← this file |
-| GitHub Copilot | `.github/copilot-instructions.md` |
-| Other (Cursor, Windsurf, GPT…) | Provide either file as context before requesting changes |
-
-Both files contain identical rules and must be kept in sync.
-All rules here are mandatory for any AI working on this repository.
+This file is loaded automatically by GitHub Copilot. The same rules apply to any
+other AI assistant (Claude Code, Cursor, Windsurf, GPT, etc.) — see also `CLAUDE.md`
+at the repository root.
 
 ---
 
