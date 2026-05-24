@@ -35,6 +35,14 @@ public class McpProxyController(
             logger.LogWarning("Unauthorized access attempt for account: {AccountId}", accountId);
             return Unauthorized(ex.Message);
         }
+        catch (UpstreamMcpException ex)
+        {
+            logger.LogWarning(
+                "Upstream MCP returned HTTP {UpstreamStatus} for account {AccountId}: {Message}",
+                ex.StatusCode, accountId, ex.Message);
+            return StatusCode(StatusCodes.Status502BadGateway,
+                new { error = ex.Message, upstreamStatus = ex.StatusCode });
+        }
         catch (HttpRequestException ex)
         {
             logger.LogError(ex, "Error forwarding to upstream MCP for account {AccountId}", accountId);

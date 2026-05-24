@@ -92,8 +92,64 @@ accountsListCommand.SetHandler(async () =>
         Console.WriteLine($"{acc.AccountId,-30} {acc.DisplayName}");
 });
 
+// ══════════════════════════════════════════════
+// comando: accounts add --account --pat [--display-name] [--url]
+// ══════════════════════════════════════════════
+var addPatOption         = new Option<string>("--pat", "Personal Access Token for the account") { IsRequired = true };
+var addDisplayNameOption = new Option<string?>("--display-name", "Optional display name");
+var addUrlOption         = new Option<string?>("--url", "Optional Azure DevOps organization URL");
+
+var accountsAddCommand = new Command("add", "Register a new account");
+accountsAddCommand.AddOption(accountOption);
+accountsAddCommand.AddOption(addPatOption);
+accountsAddCommand.AddOption(addDisplayNameOption);
+accountsAddCommand.AddOption(addUrlOption);
+accountsAddCommand.SetHandler(async (account, pat, displayName, url) =>
+{
+    using var host = BuildHost();
+    var useCase    = host.Services.GetRequiredService<IManageAccountsUseCase>();
+    await useCase.RegisterAsync(new RegisterAccountRequest(
+        AccountId:   account,
+        Pat:         pat,
+        DisplayName: displayName,
+        TargetUrl:   url));
+    Console.WriteLine($"Account '{account}' registered successfully.");
+}, accountOption, addPatOption, addDisplayNameOption, addUrlOption);
+
+// ══════════════════════════════════════════════
+// comando: accounts remove --account
+// ══════════════════════════════════════════════
+var accountsRemoveCommand = new Command("remove", "Remove a registered account");
+accountsRemoveCommand.AddOption(accountOption);
+accountsRemoveCommand.SetHandler(async (account) =>
+{
+    using var host = BuildHost();
+    var useCase    = host.Services.GetRequiredService<IManageAccountsUseCase>();
+    await useCase.RemoveAsync(account);
+    Console.WriteLine($"Account '{account}' removed.");
+}, accountOption);
+
+// ══════════════════════════════════════════════
+// comando: accounts update-pat --account --pat
+// ══════════════════════════════════════════════
+var updatePatOption = new Option<string>("--pat", "New Personal Access Token") { IsRequired = true };
+
+var accountsUpdatePatCommand = new Command("update-pat", "Update the PAT for an existing account");
+accountsUpdatePatCommand.AddOption(accountOption);
+accountsUpdatePatCommand.AddOption(updatePatOption);
+accountsUpdatePatCommand.SetHandler(async (account, pat) =>
+{
+    using var host = BuildHost();
+    var useCase    = host.Services.GetRequiredService<IManageAccountsUseCase>();
+    await useCase.UpdatePatAsync(account, pat);
+    Console.WriteLine($"PAT updated for account '{account}'.");
+}, accountOption, updatePatOption);
+
 var accountsCommand = new Command("accounts", "Manage configured accounts");
 accountsCommand.AddCommand(accountsListCommand);
+accountsCommand.AddCommand(accountsAddCommand);
+accountsCommand.AddCommand(accountsRemoveCommand);
+accountsCommand.AddCommand(accountsUpdatePatCommand);
 
 // ══════════════════════════════════════════════
 // Root command

@@ -22,15 +22,25 @@ public sealed class UpstreamMcpGateway(
 
         await using var client = await CreateMcpClientAsync(pat, cancellationToken);
 
-        var result = await client.CallToolAsync(toolName, arguments, cancellationToken: cancellationToken);
+        try
+        {
+            var result = await client.CallToolAsync(toolName, arguments, cancellationToken: cancellationToken);
 
-        var content = string.Join("\n", result.Content
-            .OfType<TextContentBlock>()
-            .Select(c => c.Text));
+            var content = string.Join("\n", result.Content
+                .OfType<TextContentBlock>()
+                .Select(c => c.Text));
 
-        logger.LogInformation("Tool '{Tool}' responded. IsError={IsError}", toolName, result.IsError);
+            logger.LogInformation("Tool '{Tool}' responded. IsError={IsError}", toolName, result.IsError);
 
-        return new ToolExecutionResult(result.IsError ?? false, content);
+            return new ToolExecutionResult(result.IsError ?? false, content);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode.HasValue)
+        {
+            // Errores HTTP con código de estado → UpstreamMcpException con el código real
+            throw new UpstreamMcpException(
+                (int)ex.StatusCode.Value,
+                $"Azure DevOps MCP devolvió HTTP {(int)ex.StatusCode.Value} al llamar a '{toolName}': {ex.Message}");
+        }
     }
 
     public async Task<IReadOnlyList<ToolDescriptor>> ListToolsAsync(

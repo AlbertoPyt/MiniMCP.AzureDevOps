@@ -1,12 +1,16 @@
 using MCP.AzureDevOps.Application.DependencyInjection;
 using MCP.AzureDevOps.Domain.ValueObjects;
 using MCP.AzureDevOps.Host.Auth;
+using MCP.AzureDevOps.Host.Middleware;
 using MCP.AzureDevOps.Host.Mcp.Tools;
 using MCP.AzureDevOps.Infrastructure.Configuration;
 using MCP.AzureDevOps.Infrastructure.DependencyInjection;
 using MCP.AzureDevOps.Infrastructure.Persistence;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
+using System.Threading.RateLimiting;
 
 var isStdioMode = args.Contains("--stdio");
 
@@ -70,8 +74,10 @@ builder.Services
     .WithHttpTransport();
 
 // ── Autenticación por API key ─────────────────────────────────────────────
-builder.Services.Configure<AuthOptions>(
-    builder.Configuration.GetSection(AuthOptions.SectionName));
+builder.Services.AddSingleton<IValidateOptions<AuthOptions>, AuthOptionsValidator>();
+builder.Services.AddOptions<AuthOptions>()
+    .BindConfiguration(AuthOptions.SectionName)
+    .ValidateOnStart();
 
 builder.Services
     .AddAuthentication(ApiKeyAuthenticationOptions.Scheme)
@@ -79,6 +85,26 @@ builder.Services
         ApiKeyAuthenticationOptions.Scheme, _ => { });
 
 builder.Services.AddAuthorization();
+
+// ── Rate limiting: ventana fija 200 peticiones / minuto por IP ────────────
+builder.Services.AddRateLimiter(opts =>
+{
+    opts.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(ctx =>
+    {
+        var partition = ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(partition, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit          = 200,
+            Window               = TimeSpan.FromMinutes(1),
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit           = 0
+        });
+    });
+    opts.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
+
+// ── Health checks ─────────────────────────────────────────────────────────
+builder.Services.AddHealthChecks();
 
 // ── REST API + Swagger ────────────────────────────────────────────────────
 builder.Services.AddControllers();
@@ -131,6 +157,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// Correlation ID — debe ir antes de cualquier middleware que emita logs
+app.UseMiddleware<CorrelationIdMiddleware>();
+
+app.UseRateLimiter();
+
 // El orden importa: Authentication → Authorization
 app.UseAuthentication();
 app.UseAuthorization();
@@ -139,6 +170,10 @@ app.MapControllers();
 
 // Endpoint MCP Streamable HTTP protegido con la misma API key
 app.MapMcp("/mcp").RequireAuthorization();
+
+// Health checks — sin autenticación para que los orquestadores puedan sondear
+app.MapHealthChecks("/health/live");
+app.MapHealthChecks("/health/ready");
 
 app.Run();
 
