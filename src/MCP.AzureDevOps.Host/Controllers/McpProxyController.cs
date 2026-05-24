@@ -1,11 +1,17 @@
 using MCP.AzureDevOps.Application.Ports.In;
 using MCP.AzureDevOps.Domain.Exceptions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MCP.AzureDevOps.Host.Controllers;
 
+/// <summary>
+/// Proxy directo al MCP de Azure DevOps vía REST.
+/// Requiere autenticación mediante API key (header X-Api-Key).
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class McpProxyController(
     IForwardToolUseCase forwardUseCase,
     ILogger<McpProxyController> logger) : ControllerBase

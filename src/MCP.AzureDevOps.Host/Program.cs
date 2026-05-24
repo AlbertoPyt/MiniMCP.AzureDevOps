@@ -1,15 +1,16 @@
 using MCP.AzureDevOps.Application.DependencyInjection;
 using MCP.AzureDevOps.Application.Ports.In;
-using MCP.AzureDevOps.Application.Ports.Out;
-using MCP.AzureDevOps.Domain.Entities;
 using MCP.AzureDevOps.Domain.ValueObjects;
+using MCP.AzureDevOps.Host.Auth;
 using MCP.AzureDevOps.Host.Mcp.Context;
 using MCP.AzureDevOps.Host.Mcp.Tools;
 using MCP.AzureDevOps.Infrastructure.Configuration;
 using MCP.AzureDevOps.Infrastructure.DependencyInjection;
 using MCP.AzureDevOps.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.OpenApi.Models;
 
 var isStdioMode = args.Contains("--stdio");
 
@@ -28,14 +29,11 @@ if (isStdioMode)
             services.AddInfrastructureServices(ctx.Configuration);
             services.AddApplicationServices();
 
-            // Tools estáticas inyectadas en ListToolsUseCase
             services.AddSingleton<IEnumerable<ToolDescriptor>>(StaticToolDescriptors());
 
-            // Contexto de cuenta: lee de McpOptions.ActiveAccountId
             services.AddScoped<McpAccountContext>();
             services.AddScoped<IMcpAccountContext>(sp => sp.GetRequiredService<McpAccountContext>());
 
-            // Servidor MCP con transporte stdio
             services.AddMcpServer(opts =>
                 {
                     opts.ServerInfo = new() { Name = "AzureDevOps-MCP", Version = "1.0.0" };
@@ -59,14 +57,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddApplicationServices();
 
-// Tools estáticas para ListToolsUseCase
 builder.Services.AddSingleton<IEnumerable<ToolDescriptor>>(StaticToolDescriptors());
 
-// Contexto de cuenta scoped (se puede sobrescribir por middleware para multi-cuenta)
 builder.Services.AddScoped<McpAccountContext>();
 builder.Services.AddScoped<IMcpAccountContext>(sp => sp.GetRequiredService<McpAccountContext>());
 
-// Servidor MCP con transporte HTTP (Streamable HTTP)
 builder.Services
     .AddMcpServer(opts =>
     {
@@ -78,7 +73,18 @@ builder.Services
     .WithTools<DynamicProxyTool>()
     .WithHttpTransport();
 
-// REST API
+// ── Autenticación por API key ─────────────────────────────────────────────
+builder.Services.Configure<AuthOptions>(
+    builder.Configuration.GetSection(AuthOptions.SectionName));
+
+builder.Services
+    .AddAuthentication(ApiKeyAuthenticationOptions.Scheme)
+    .AddScheme<ApiKeyAuthenticationOptions, ApiKeyAuthenticationHandler>(
+        ApiKeyAuthenticationOptions.Scheme, _ => { });
+
+builder.Services.AddAuthorization();
+
+// ── REST API + Swagger ────────────────────────────────────────────────────
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -89,11 +95,36 @@ builder.Services.AddSwaggerGen(c =>
         Version     = "v1",
         Description = "Proxy multi-tenant para el MCP oficial de Azure DevOps"
     });
+
+    // Definición del esquema de seguridad para Swagger UI
+    c.AddSecurityDefinition(ApiKeyAuthenticationOptions.Scheme, new OpenApiSecurityScheme
+    {
+        Type        = SecuritySchemeType.ApiKey,
+        In          = ParameterLocation.Header,
+        Name        = ApiKeyAuthenticationOptions.HeaderName,
+        Description = "API key para acceder a los endpoints críticos. " +
+                      "Configura 'Auth:AdminApiKey' en appsettings."
+    });
+
+    // Aplicar el esquema globalmente a todos los endpoints
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id   = ApiKeyAuthenticationOptions.Scheme
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
 });
 
 var app = builder.Build();
 
-// Migraciones y seed antes de aceptar tráfico
 await RunMigrationsAndSeedAsync(app.Services);
 
 if (app.Environment.IsDevelopment())
@@ -103,36 +134,34 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// El orden importa: Authentication → Authorization
+app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 
-// Endpoint MCP Streamable HTTP — compatible con VS Code, Copilot, Visual Studio 2026
-app.MapMcp("/mcp");
+// Endpoint MCP Streamable HTTP protegido con la misma API key
+app.MapMcp("/mcp").RequireAuthorization();
 
 app.Run();
 
 // ── Migraciones automáticas + seed desde configuración ────────────────────
 static async Task RunMigrationsAndSeedAsync(IServiceProvider services)
 {
-    // Solo actuar si el DbContext está registrado (modo base de datos activo)
-    var dbContextFactory = services.GetService<IServiceScopeFactory>();
-    if (dbContextFactory is null) return;
-
     using var scope = services.CreateScope();
     var sp = scope.ServiceProvider;
 
     var dbContext = sp.GetService<AccountDbContext>();
-    if (dbContext is null) return;   // modo config-only, nada que migrar
+    if (dbContext is null) return;
 
-    // Aplicar migraciones pendientes (crea la BD si no existe)
     await dbContext.Database.MigrateAsync();
 
-    // Seed: si la tabla está vacía y hay cuentas en la configuración, las importa
     if (!await dbContext.Accounts.AnyAsync())
     {
-        var mcpOptions  = sp.GetRequiredService<IOptions<McpOptions>>().Value;
+        var mcpOptions     = sp.GetRequiredService<IOptions<McpOptions>>().Value;
         var manageAccounts = sp.GetRequiredService<IManageAccountsUseCase>();
-        var logger      = sp.GetRequiredService<ILogger<Program>>();
+        var logger         = sp.GetRequiredService<ILogger<Program>>();
 
         foreach (var kvp in mcpOptions.AccountTokens)
         {
@@ -147,15 +176,15 @@ static async Task RunMigrationsAndSeedAsync(IServiceProvider services)
     }
 }
 
-// ── Descriptores de tools estáticas (para ListToolsUseCase) ──
+// ── Descriptores de tools estáticas ──
 static IEnumerable<ToolDescriptor> StaticToolDescriptors() =>
 [
-    new("workitems_get",      "Gets a work item by ID",                          "{}", IsStatic: true),
-    new("workitems_create",   "Creates a new work item",                         "{}", IsStatic: true),
-    new("workitems_list",     "Queries work items using WIQL",                   "{}", IsStatic: true),
-    new("pipelines_list",     "Lists pipelines in a project",                    "{}", IsStatic: true),
-    new("pipelines_run",      "Triggers a pipeline run",                         "{}", IsStatic: true),
-    new("repos_list",         "Lists all repositories in a project",             "{}", IsStatic: true),
-    new("repos_get_prs",      "Lists pull requests in a repository",             "{}", IsStatic: true),
-    new("dynamic_tool_proxy", "Proxy for any other Azure DevOps MCP tool",       "{}", IsStatic: true),
+    new("workitems_get",      "Gets a work item by ID",                     "{}", IsStatic: true),
+    new("workitems_create",   "Creates a new work item",                    "{}", IsStatic: true),
+    new("workitems_list",     "Queries work items using WIQL",              "{}", IsStatic: true),
+    new("pipelines_list",     "Lists pipelines in a project",              "{}", IsStatic: true),
+    new("pipelines_run",      "Triggers a pipeline run",                   "{}", IsStatic: true),
+    new("repos_list",         "Lists all repositories in a project",       "{}", IsStatic: true),
+    new("repos_get_prs",      "Lists pull requests in a repository",       "{}", IsStatic: true),
+    new("dynamic_tool_proxy", "Proxy for any other Azure DevOps MCP tool", "{}", IsStatic: true),
 ];

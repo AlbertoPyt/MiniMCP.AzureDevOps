@@ -1,6 +1,7 @@
 using MCP.AzureDevOps.Application.Ports.In;
 using MCP.AzureDevOps.Domain.Exceptions;
 using MCP.AzureDevOps.Host.Controllers.Dtos;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MCP.AzureDevOps.Host.Controllers;
@@ -8,9 +9,11 @@ namespace MCP.AzureDevOps.Host.Controllers;
 /// <summary>
 /// CRUD de cuentas con PAT cifrado.
 /// Los PATs nunca se devuelven en las respuestas.
+/// Requiere autenticación mediante API key (header X-Api-Key).
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public sealed class AccountsController(IManageAccountsUseCase manageAccounts) : ControllerBase
 {
     /// <summary>Devuelve todas las cuentas registradas (sin exponer el PAT).</summary>
