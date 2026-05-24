@@ -1,0 +1,10 @@
+global using FluentAssertions;
+global using MCP.AzureDevOps.Application.Ports.In;
+global using MCP.AzureDevOps.Application.Ports.Out;
+global using MCP.AzureDevOps.Domain.ValueObjects;
+global using MCP.AzureDevOps.Host.Auth;
+global using MCP.AzureDevOps.Host.Tests.Infrastructure;
+global using Microsoft.AspNetCore.Mvc.Testing;
+global using NSubstitute;
+global using System.Net;
+global using System.Net.Http.Json;

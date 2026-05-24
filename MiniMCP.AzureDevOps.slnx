@@ -10,5 +10,6 @@
   <Folder Name="/tests/">
     <Project Path="tests/MCP.AzureDevOps.Application.Tests/MCP.AzureDevOps.Application.Tests.csproj" />
     <Project Path="tests/MCP.AzureDevOps.Domain.Tests/MCP.AzureDevOps.Domain.Tests.csproj" />
+    <Project Path="tests/MCP.AzureDevOps.Host.Tests/MCP.AzureDevOps.Host.Tests.csproj" />
   </Folder>
 </Solution>

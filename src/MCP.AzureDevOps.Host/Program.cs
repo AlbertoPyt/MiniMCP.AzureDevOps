@@ -184,3 +184,6 @@ static IEnumerable<ToolDescriptor> StaticToolDescriptors() =>
     new("repos_get_prs",      "Lists pull requests in a repository",       "{}", IsStatic: true),
     new("dynamic_tool_proxy", "Proxy for any other Azure DevOps MCP tool", "{}", IsStatic: true),
 ];
+
+// Requerido por WebApplicationFactory<Program> en los tests E2E
+public partial class Program { }
